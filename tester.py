@@ -105,13 +105,17 @@ def grade_problem(problem, lang, contest_dir, args):
 							log(1, args.verbose, " " + "-"*(table_column_width+2) + "+" + "-"*(table_column_width+2))
 							
 							out = out.split("\n")
-							debug_output = [line[1:].replace("\n", "") for line in out if len(line) > 0 and line[0] == "~"]
-							answer_output = [line.replace("\n", "") for line in out if len(line) > 0 and line[0] != "~"]
+
+							if out[-1] == "":
+								out = out[:-1]
+
+							debug_output = [line[1:] for line in out if len(line) > 0 and line[0] == "~"]
+							answer_output = [line + "\n" for line in out if len(line) == 0 or line[0] != "~"]
 							
 							line = expected_out.readline()
 							correct = []
 							while line != "---\n" and line != "---":
-								correct.append(line.replace("\n", ""))
+								correct.append(line)
 								line = expected_out.readline()
 							
 							submission_correct = True
@@ -122,13 +126,21 @@ def grade_problem(problem, lang, contest_dir, args):
 								
 								if graders[args.grader](correct_line, given_line):                        
 									log(1, args.verbose, "  {0} | {1}".format(
-										str(colored.green(correct_line + (" "*(table_column_width-len(correct_line))))) if len(correct_line) <= table_column_width else str(colored.green(correct_line[:(table_column_width-3)] + "...")),
-										str(colored.green(given_line + (" "*(table_column_width-len(given_line))))) if len(given_line) <= table_column_width else str(colored.green(given_line[:(table_column_width-3)] + "..."))))
+										show_whitespace(correct_line, True) + (" "*(table_column_width-len(correct_line)))
+											if len(correct_line) <= table_column_width
+										else show_whitespace(correct_line[:(table_column_width-3)] + "...", True),
+										show_whitespace(given_line, True) + (" "*(table_column_width-len(given_line)))
+											if len(given_line) <= table_column_width
+										else show_whitespace(given_line[:(table_column_width-3)] + "...", True)))
 								else:
 									submission_correct = False
 									log(1, args.verbose, "  {0} | {1}".format(
-										str(colored.red(correct_line + (" "*(table_column_width-len(correct_line))))) if len(correct_line) <= table_column_width else str(colored.red(correct_line[:(table_column_width-3)] + "...")),
-										str(colored.red(given_line + (" "*(table_column_width-len(given_line))))) if len(given_line) <= table_column_width else str(colored.red(given_line[:(table_column_width-3)] + "..."))))
+										show_whitespace(correct_line, False) + (" "*(table_column_width-len(correct_line)))
+											if len(correct_line) <= table_column_width
+										else show_whitespace(correct_line[:(table_column_width-3)] + "...", False),
+										show_whitespace(given_line, False) + (" "*(table_column_width-len(given_line)))
+											if len(given_line) <= table_column_width
+										else show_whitespace(given_line[:(table_column_width-3)] + "...", False)))
 							
 							log(1, args.verbose, "\n (Expected", len(correct), "lines, given", len(correct), "lines)\n")
 							
@@ -208,6 +220,18 @@ def log(level, log_level, *message, sep=" ", end="\n"):
 def log_eq(level, log_level, *message, sep=" ", end="\n"):
 	if level == log_level:
 		print(*message, sep=sep, end=end)
+
+def show_whitespace(string, ok):
+	ret = ""
+	color = colored.green if ok else colored.red
+	for ch in string:
+		if ch == " ":
+			ret += str(color(u"\u00b7"))
+		elif ch == "\n":
+			ret += str(color(u"\u21a9"))
+		else:
+			ret += color(ch, bold=True)
+	return ret
 
 def main():
 	print(colored.blue("\nWelcome to the program batch tester!\n"))
