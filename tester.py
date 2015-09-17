@@ -268,7 +268,12 @@ def main():
 
 	while True:
 		print()
-		args = argument_parser.parse_args(input("> ").split(" "))
+		
+		try:
+			args = argument_parser.parse_args(input("> ").split(" "))
+		except SystemExit:
+			continue
+
 		if args.verbose is None:
 			args.verbose = 0
 		
