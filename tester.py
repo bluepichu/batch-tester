@@ -226,9 +226,14 @@ def show_whitespace(string, ok):
 	color = colored.green if ok else colored.red
 	for ch in string:
 		if ch == " ":
-			ret += str(color(u"\u00b7"))
+			ret += color(u"\u00b7")
 		elif ch == "\n":
-			ret += str(color(u"\u21a9"))
+			ret += color(u"\u21a9")
+		elif ch == "\t":
+			ret += color(u"\u2576")
+			while len(ret) % 4 != 3:
+				ret += color(u"\u2500")
+			ret += color(u"\u2574")
 		else:
 			ret += color(ch, bold=True)
 	return ret
