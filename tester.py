@@ -224,18 +224,30 @@ def log_eq(level, log_level, *message, sep=" ", end="\n"):
 def show_whitespace(string, ok):
 	ret = ""
 	color = colored.green if ok else colored.red
+	characters_in_line = 0
 	for ch in string:
 		if ch == " ":
 			ret += color(u"\u00b7")
+			characters_in_line += 1
 		elif ch == "\n":
 			ret += color(u"\u21a9")
+			characters_in_line = 0
 		elif ch == "\t":
-			ret += color(u"\u2576")
-			while len(ret) % 4 != 3:
-				ret += color(u"\u2500")
-			ret += color(u"\u2574")
+			if characters_in_line % 4 == 0:
+				ret += color(u"\u2576\u2500\u2500\u2574")
+				characters_in_line += 4
+			elif characters_in_line % 4 == 1:
+				ret += color(u"\u2576\u2500\u2574")
+				characters_in_line += 3
+			elif characters_in_line % 4 == 2:
+				ret += color(u"\u2576\u2574")
+				characters_in_line += 2
+			else:
+				ret += color(u"\u2010")
+				characters_in_line += 1
 		else:
 			ret += color(ch, bold=True)
+			characters_in_line += 1
 	return ret
 
 def main():
@@ -272,27 +284,32 @@ def main():
 	argument_parser.add_argument("-g", "--grader", type=str, default="exact")
 
 	while True:
-		print()
-		
 		try:
-			args = argument_parser.parse_args(input("> ").split(" "))
-		except SystemExit:
-			continue
+			print()
+			
+			try:
+				args = argument_parser.parse_args(input("> ").split(" "))
+			except SystemExit:
+				continue
 
-		if args.verbose is None:
-			args.verbose = 0
-		
-		if args.command == "quit":
+			if args.verbose is None:
+				args.verbose = 0
+			
+			if args.command == "quit":
+				exit()
+
+			if args.command == "clear" or args.command == "cls":
+				os.system("cls" if os.name == "nt" else "clear")
+
+			if args.command == "add":
+				if not add_file(args.problem, args.language, contest_dir):
+					print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
+
+			if args.command == "test":
+				if not grade_problem(args.problem, args.language, contest_dir, args):
+					print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
+		except KeyboardInterrupt:
+			print(colored.red("Operation stopped by keyboard interrupt.  Use \"quit\" or Ctrl+D to exit.", bold=True))
+		except EOFError:
 			exit()
-
-		if args.command == "clear" or args.command == "cls":
-			os.system("cls" if os.name == "nt" else "clear")
-
-		if args.command == "add":
-			if not add_file(args.problem, args.language, contest_dir):
-				print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
-
-		if args.command == "test":
-			if not grade_problem(args.problem, args.language, contest_dir, args):
-				print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
 if __name__ == "__main__": main()
