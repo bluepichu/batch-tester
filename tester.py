@@ -53,8 +53,8 @@ def grade_problem(problem, lang, contest_dir, args):
 	all_ok = True
 	had_debug_output = False
 	
-	with open(os.path.join(contest_dir, "tests/%s"%(descriptor["test_files"]["input"]))) as cases:
-		with open(os.path.join(contest_dir, "tests/%s"%(descriptor["test_files"]["output"]))) as expected_out:
+	with open(os.path.join(contest_dir, "tests/%s"%(descriptor["testing"]["input_cases"]))) as cases:
+		with open(os.path.join(contest_dir, "tests/%s"%(descriptor["testing"]["output_cases"]))) as expected_out:
 			while True:
 				line = cases.readline()
 				if line == "":
@@ -73,12 +73,12 @@ def grade_problem(problem, lang, contest_dir, args):
 					log(1, args.verbose, "\n  (Total %i lines.)\n"%(len(inp)))
 					log(1, args.verbose, colored.magenta("Running...", bold=True), end="\r")
 					start_time = clock()
-					if descriptor["input"] != "stdin":
-						with open(os.path.join(contest_dir, "bin/%s"%(descriptor["input"])), "w") as prog_in:
+					if descriptor["io"]["input"] != "stdin":
+						with open(os.path.join(contest_dir, "bin/%s"%(descriptor["io"]["input"])), "w") as prog_in:
 							prog_in.write("".join(inp))
 					run = Popen(lang["run"]%(problem), stderr=PIPE, stdin=PIPE, stdout=PIPE, cwd=os.path.join(contest_dir, config["directories"]["bin"]), universal_newlines=True, shell=True)
 					try:
-						if descriptor["input"] == "stdin":
+						if descriptor["io"]["input"] == "stdin":
 							out, err = run.communicate(input="".join(inp), timeout=args.timelimit)
 						else:
 							out, err = run.communicate(timeout=args.timelimit)
@@ -121,8 +121,8 @@ def grade_problem(problem, lang, contest_dir, args):
 							debug_output = [line[1:] for line in out if len(line) > 0 and line[0] == "~"]
 							answer_output = [line + "\n" for line in out if len(line) == 0 or line[0] != "~"]
 
-							if descriptor["output"] != "stdout":
-								with open(os.path.join(contest_dir, "bin/%s"%(descriptor["output"]))) as prog_out:
+							if descriptor["io"]["output"] != "stdout":
+								with open(os.path.join(contest_dir, "bin/%s"%(descriptor["io"]["output"]))) as prog_out:
 									answer_output = [line + "\n" for line in prog_out.read().split("\n")]
 									if answer_output[-1] == "\n":
 										answer_output = answer_output[:-1]
@@ -139,7 +139,7 @@ def grade_problem(problem, lang, contest_dir, args):
 								correct_line = correct[i] if i < len(correct) else ""
 								given_line = answer_output[i] if i < len(answer_output) else ""
 								
-								if graders[descriptor["grader"]](correct_line, given_line):                        
+								if graders[descriptor["testing"]["grading"]](correct_line, given_line):                        
 									log(1, args.verbose, "  {0} | {1}".format(
 										show_whitespace(correct_line, True) + (" "*(table_column_width-len(correct_line)))
 											if len(correct_line) <= table_column_width
@@ -226,16 +226,18 @@ def add_file(problem, lang, contest_dir):
 				line = template.readline()
 	with open(os.path.join(contest_dir, config["directories"]["descriptors"], problem + ".json"), "w") as descriptor_file:
 		descriptor = {
-			"name": problem,
-			"input": "stdin",
-			"output": "stdout",
-			"grader": "exact",
-			"test_files": {
-				"input": problem + ".in",
-				"output": problem + ".out"
+			"name": problem, # is this even used for anything?
+			"io": {
+				"input": "stdin",
+				"output": "stdout",
+			},
+			"testing": {
+				"input_cases": problem + ".in",
+				"output_cases": problem + ".out",
+				"grading": "exact"
 			}
 		}
-		descriptor_file.write(json.dumps(descriptor))
+		descriptor_file.write(json.dumps(descriptor, sort_keys=False, indent="\t", separators=(",", ": ")))
 	open(os.path.join(contest_dir, "tests", problem + ".in"), "a").close()
 	open(os.path.join(contest_dir, "tests", problem + ".out"), "a").close()
 	return True
