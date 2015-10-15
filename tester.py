@@ -1,5 +1,5 @@
 from datetime import *
-from time import sleep, clock
+from time import sleep, perf_counter
 from sys import exit
 import os
 from shutil import copyfile
@@ -73,7 +73,7 @@ def grade_problem(problem, lang, contest_dir, args):
 						log(1, args.verbose, colored.white("..."))
 					log(1, args.verbose, "\n  (Total %i lines.)\n"%(len(inp)))
 					log(1, args.verbose, colored.magenta("Running...", bold=True), end="\r")
-					start_time = clock()
+					start_time = perf_counter()
 					if descriptor["io"]["input"] != "stdin":
 						with open(os.path.join(contest_dir, "bin/%s"%(descriptor["io"]["input"])), "w") as prog_in:
 							prog_in.write("".join(inp))
@@ -83,9 +83,9 @@ def grade_problem(problem, lang, contest_dir, args):
 							out, err = run.communicate(input="".join(inp), timeout=args.timelimit)
 						else:
 							out, err = run.communicate(timeout=args.timelimit)
-						end_time = clock()
+						end_time = perf_counter()
 					except subprocess.TimeoutExpired:
-						end_time = clock()
+						end_time = perf_counter()
 						run.kill()
 						log(1, args.verbose, colored.magenta("Run timed out.\n", bold=True))
 						print_verdict(case_number, "TLE", int(1000*(end_time - start_time)), args)
