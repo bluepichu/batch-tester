@@ -78,11 +78,14 @@ def grade_problem(problem, lang, contest_dir, args):
 						with open(os.path.join(contest_dir, "bin/%s"%(descriptor["io"]["input"])), "w") as prog_in:
 							prog_in.write("".join(inp))
 					run = Popen(lang["run"]%(problem), stderr=PIPE, stdin=PIPE, stdout=PIPE, cwd=os.path.join(contest_dir, config["directories"]["bin"]), universal_newlines=True, shell=True)
+					
+					time_limit = args.timelimit or descriptor["limits"]["time"]
+
 					try:
 						if descriptor["io"]["input"] == "stdin":
-							out, err = run.communicate(input="".join(inp), timeout=args.timelimit)
+							out, err = run.communicate(input="".join(inp), timeout=time_limit)
 						else:
-							out, err = run.communicate(timeout=args.timelimit)
+							out, err = run.communicate(timeout=time_limit)
 						end_time = perf_counter()
 					except subprocess.TimeoutExpired:
 						end_time = perf_counter()
@@ -236,6 +239,10 @@ def add_file(problem, lang, contest_dir):
 				"input_cases": problem + ".in",
 				"output_cases": problem + ".out",
 				"grading": "exact"
+			},
+			"limits": {
+				"time": 2,
+				"memory": 64
 			}
 		}
 		descriptor_file.write(json.dumps(descriptor, sort_keys=False, indent="\t", separators=(",", ": ")))
