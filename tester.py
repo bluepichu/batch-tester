@@ -12,6 +12,7 @@ from shutil import get_terminal_size
 import json
 import re
 import argparse
+import readline
 
 # TODO cleanup this import mess
 
