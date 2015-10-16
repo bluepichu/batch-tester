@@ -93,6 +93,9 @@ def grade_problem(problem, lang, contest_dir, args):
 						log(1, args.verbose, colored.magenta("Run timed out.\n", bold=True))
 						print_verdict(case_number, "TLE", int(1000*(end_time - start_time)), args)
 						all_ok = False
+						line = expected_out.readline()
+						while line != "---\n" and line != "---":
+							line = expected_out.readline()
 						if args.stop:
 							return True
 					else:
