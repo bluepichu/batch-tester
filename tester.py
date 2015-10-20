@@ -262,9 +262,6 @@ def add_file(args, contest_dir):
 			inputs = [strip_case(case) for case in soup.select("div.input pre")]
 			outputs = [strip_case(case) for case in soup.select("div.output pre")]
 
-			print(inputs)
-			print(outputs)
-
 			with open(os.path.join(contest_dir, "tests", problem + ".in"), "w") as inputs_file:
 				for inp in inputs:
 					inputs_file.write(inp)
