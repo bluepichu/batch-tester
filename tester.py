@@ -13,6 +13,8 @@ import json
 import re
 import argparse
 import readline
+from bs4 import BeautifulSoup
+import requests
 
 # TODO cleanup this import mess
 
@@ -218,7 +220,10 @@ graders = {
 	"error_6": gr_error_6
 }
 
-def add_file(problem, lang, contest_dir):
+def add_file(args, contest_dir):
+	problem = args.problem
+	lang = args.language
+	url = args.url
 	for l in config["languages"]:
 		if lang in config["languages"][l]["aliases"]:
 			lang = l
@@ -249,9 +254,39 @@ def add_file(problem, lang, contest_dir):
 			}
 		}
 		descriptor_file.write(json.dumps(descriptor, sort_keys=False, indent="\t", separators=(",", ": ")))
-	open(os.path.join(contest_dir, "tests", problem + ".in"), "a").close()
-	open(os.path.join(contest_dir, "tests", problem + ".out"), "a").close()
+	if url:
+		data = requests.get(url)
+		if data:
+			soup = BeautifulSoup(data.text, "html.parser")
+
+			inputs = [strip_case(case) for case in soup.select("div.input pre")]
+			outputs = [strip_case(case) for case in soup.select("div.output pre")]
+
+			print(inputs)
+			print(outputs)
+
+			with open(os.path.join(contest_dir, "tests", problem + ".in"), "w") as inputs_file:
+				for inp in inputs:
+					inputs_file.write(inp)
+					inputs_file.write("---\n")
+
+			with open(os.path.join(contest_dir, "tests", problem + ".out"), "w") as outputs_file:
+				for out in outputs:
+					outputs_file.write(out)
+					outputs_file.write("---\n")
+	else:
+		open(os.path.join(contest_dir, "tests", problem + ".in"), "a").close()
+		open(os.path.join(contest_dir, "tests", problem + ".out"), "a").close()
 	return True
+
+def strip_case(elem):
+    text = ""
+    for e in elem.recursiveChildGenerator():
+        if isinstance(e, str):
+            text += e.strip()
+        elif e.name == "br":
+            text += "\n"
+    return text
 
 def log(level, log_level, *message, sep=" ", end="\n"):
 	if level <= log_level:
@@ -325,6 +360,7 @@ def main():
 	argument_parser.add_argument("-v", "--verbose", action="count")
 	argument_parser.add_argument("-s", "--stop", action="store_true")
 	argument_parser.add_argument("-t", "--timelimit", type=float)
+	argument_parser.add_argument("-u", "--url", type=str)
 
 	while True:
 		try:
@@ -345,7 +381,7 @@ def main():
 				os.system("cls" if os.name == "nt" else "clear")
 
 			if args.command == "add":
-				if not add_file(args.problem, args.language, contest_dir):
+				if not add_file(args, contest_dir):
 					print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
 
 			if args.command == "test":

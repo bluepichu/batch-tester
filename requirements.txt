@@ -1,3 +1,5 @@
 clint
 argparse
 psutil
+beautifulsoup4
+requests
