@@ -1,3 +1,5 @@
 config.json
 templates
 env
+.DS_Store
+__pycache__

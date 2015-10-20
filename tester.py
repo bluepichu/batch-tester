@@ -15,6 +15,7 @@ import argparse
 import readline
 from bs4 import BeautifulSoup
 import requests
+import graders
 
 # TODO cleanup this import mess
 
@@ -148,7 +149,7 @@ def grade_problem(problem, lang, contest_dir, args):
 								correct_line = correct[i] if i < len(correct) else ""
 								given_line = answer_output[i] if i < len(answer_output) else ""
 								
-								if graders[descriptor["testing"]["grading"]](correct_line, given_line):                        
+								if graders[descriptor["testing"]["grading"]].grade(correct_line, given_line):                        
 									log(1, args.verbose, "  {0} | {1}".format(
 										show_whitespace(correct_line, True) + (" "*(table_column_width-len(correct_line)))
 											if len(correct_line) <= table_column_width
@@ -213,12 +214,6 @@ def gr_error_6(correct, given):
 	correct = float(correct)
 	given = float(given)
 	return abs(correct - given) / max(correct, 1) < 1e-6
-
-graders = {
-	"exact": gr_exact,
-	"error3": gr_error_3,
-	"error_6": gr_error_6
-}
 
 def add_file(args, contest_dir):
 	problem = args.problem
