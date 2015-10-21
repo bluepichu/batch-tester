@@ -1,3 +1,5 @@
+from clint.textui import colored
+
 def grade(expected_input, given_input):
 	expected, given = expected_input, given_input
 
@@ -7,11 +9,11 @@ def grade(expected_input, given_input):
 		raise Exception("Grader error: invalid expected answer.")
 
 	try:
-		given = int(expected)
+		given = int(given)
 	except Exception as ex:
-		return False, colored.red(given)
+		return False, colored.red(given_input)
 
 	if given == expected:
-		return True, colored.green(given)
+		return True, colored.green(given_input)
 	else:
-		return False, colored.red(given)
+		return False, colored.red(given_input)

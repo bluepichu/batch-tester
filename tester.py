@@ -15,7 +15,7 @@ import argparse
 import readline
 from bs4 import BeautifulSoup
 import requests
-import graders
+from graders import *
 
 # TODO cleanup this import mess
 
@@ -143,29 +143,24 @@ def grade_problem(problem, lang, contest_dir, args):
 								correct.append(line)
 								line = expected_out.readline()
 							
-							submission_correct = True
+							submission_correct, pretty_output = globals()[descriptor["testing"]["grading"]].grade("\n".join(correct), "\n".join(answer_output))
+							
+							pretty_output = [line + "\n" for line in pretty_output.split("\n")]
+							print(pretty_output)
 
-							for i in range(min(20, max(len(answer_output), len(correct)))):
+							if pretty_output[-1] == "\n":
+								pretty_output = pretty_output[:-1]
+
+							for i in range(min(20, max(len(pretty_output), len(correct)))):
 								correct_line = correct[i] if i < len(correct) else ""
-								given_line = answer_output[i] if i < len(answer_output) else ""
-								
-								if graders[descriptor["testing"]["grading"]].grade(correct_line, given_line):                        
-									log(1, args.verbose, "  {0} | {1}".format(
-										show_whitespace(correct_line, True) + (" "*(table_column_width-len(correct_line)))
-											if len(correct_line) <= table_column_width
-										else show_whitespace(correct_line[:(table_column_width-3)] + "...", True),
-										show_whitespace(given_line, True) + (" "*(table_column_width-len(given_line)))
-											if len(given_line) <= table_column_width
-										else show_whitespace(given_line[:(table_column_width-3)] + "...", True)))
-								else:
-									submission_correct = False
-									log(1, args.verbose, "  {0} | {1}".format(
-										show_whitespace(correct_line, False) + (" "*(table_column_width-len(correct_line)))
-											if len(correct_line) <= table_column_width
-										else show_whitespace(correct_line[:(table_column_width-3)] + "...", False),
-										show_whitespace(given_line, False) + (" "*(table_column_width-len(given_line)))
-											if len(given_line) <= table_column_width
-										else show_whitespace(given_line[:(table_column_width-3)] + "...", False)))
+								given_line = pretty_output[i] if i < len(pretty_output) else ""
+								log(1, args.verbose, "  {0} | {1}".format(
+									show_whitespace(correct_line) + (" "*(table_column_width-len(correct_line)))
+										if len(correct_line) <= table_column_width
+									else show_whitespace(correct_line[:(table_column_width-3)] + "..."),
+									show_whitespace(given_line) + (" "*(table_column_width-len(given_line)))
+										if len(given_line) <= table_column_width
+									else show_whitespace(given_line[:(table_column_width-3)] + "...")))
 							
 							log(1, args.verbose, "\n (Expected", len(correct), "lines, given", len(correct), "lines)\n")
 							
@@ -288,32 +283,31 @@ def log_eq(level, log_level, *message, sep=" ", end="\n"):
 	if level == log_level:
 		print(*message, sep=sep, end=end)
 
-def show_whitespace(string, ok):
+def show_whitespace(string):
 	ret = ""
-	color = colored.green if ok else colored.red
 	characters_in_line = 0
 	for ch in string:
 		if ch == " ":
-			ret += color(u"\u00b7")
+			ret += u"\u00b7"
 			characters_in_line += 1
 		elif ch == "\n":
-			ret += color(u"\u21a9")
+			ret += u"\u21a9"
 			characters_in_line = 0
 		elif ch == "\t":
 			if characters_in_line % 4 == 0:
-				ret += color(u"\u2576\u2500\u2500\u2574")
+				ret += u"\u2576\u2500\u2500\u2574"
 				characters_in_line += 4
 			elif characters_in_line % 4 == 1:
-				ret += color(u"\u2576\u2500\u2574")
+				ret += u"\u2576\u2500\u2574"
 				characters_in_line += 3
 			elif characters_in_line % 4 == 2:
-				ret += color(u"\u2576\u2574")
+				ret += u"\u2576\u2574"
 				characters_in_line += 2
 			else:
-				ret += color(u"\u2010")
+				ret += u"\u2010"
 				characters_in_line += 1
 		else:
-			ret += color(ch, bold=True)
+			ret += ch
 			characters_in_line += 1
 	return ret
 
