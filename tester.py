@@ -18,6 +18,15 @@ import requests
 
 # TODO cleanup this import mess
 
+usage_str = """<command> [<options>]
+
+Commands include:
+
+add\t\tAdd a new solution file (with descriptor and case files)
+test\t\tTest a solution against the given cases
+clear\t\tClears the terminal
+quit\t\tExits the batch tester"""
+
 with open("config.json") as config_file:
 	config = json.load(config_file)
 
@@ -322,6 +331,31 @@ def show_whitespace(string, ok):
 			characters_in_line += 1
 	return ret
 
+def cmd_quit(args):
+	exit(0)
+
+def cmd_clear(args):
+	os.system("cls" if os.name == "nt" else "clear")
+
+def cmd_add(args):
+	argument_parser = argparse.ArgumentParser()
+
+	argument_parser.add_argument("-u", "--url", type=str)
+
+	if not add_file(argument_parser.parse_args(args), contest_dir):
+		print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
+
+def cmd_test(args):
+	if not grade_problem(args.problem, args.language, contest_dir, args):
+		print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
+
+commands = {
+	"quit": cmd_quit,
+	"clear": cmd_clear,
+	"add": cmd_add,
+	"test": cmd_test
+}
+
 def main():
 	print(colored.blue("\nWelcome to the program batch tester!\n"))
 
@@ -348,44 +382,28 @@ def main():
 	if not os.path.isdir(os.path.join(contest_dir, "tests")):
 		os.makedirs(os.path.join(contest_dir, "tests"))
 
-	argument_parser = argparse.ArgumentParser()
+	argument_parser = argparse.ArgumentParser(usage=usage_str)
 
-	argument_parser.add_argument("command")
-	argument_parser.add_argument("problem")
-	argument_parser.add_argument("language")
-
-	argument_parser.add_argument("-v", "--verbose", action="count")
-	argument_parser.add_argument("-s", "--stop", action="store_true")
-	argument_parser.add_argument("-t", "--timelimit", type=float)
-	argument_parser.add_argument("-u", "--url", type=str)
+	argument_parser.add_argument("command", help="Command to run")
 
 	while True:
 		try:
 			print()
 			
 			try:
-				args = argument_parser.parse_args(input("> ").split(" "))
+				command_input = input("> ").split(re.compile(r"\s", "g"))
+				args = argument_parser.parse_args([command_input[0]])
 			except SystemExit:
 				continue
 
-			if args.verbose is None:
-				args.verbose = 0
-			
-			if args.command == "quit":
-				exit()
+			if args.command in commands:
+				commands[args.command](command_input[1:])
+			else:
+				argument_parser.print_help()
 
-			if args.command == "clear" or args.command == "cls":
-				os.system("cls" if os.name == "nt" else "clear")
-
-			if args.command == "add":
-				if not add_file(args, contest_dir):
-					print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
-
-			if args.command == "test":
-				if not grade_problem(args.problem, args.language, contest_dir, args):
-					print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
 		except KeyboardInterrupt:
-			print(colored.red("Operation stopped by keyboard interrupt.  Use \"quit\" or Ctrl+D to exit.", bold=True))
+			print(colored.red("Operation stopped by keyboard interrupt.  Use the \"quit\" command or Ctrl+D to exit.", bold=True))
 		except EOFError:
 			exit()
+
 if __name__ == "__main__": main()
