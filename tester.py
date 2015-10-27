@@ -22,10 +22,11 @@ usage_str = """<command> [<options>]
 
 Commands include:
 
-add\t\tAdd a new solution file (with descriptor and case files)
-test\t\tTest a solution against the given cases
-clear\t\tClears the terminal
-quit\t\tExits the batch tester"""
+add\tadds a new solution file (with descriptor and case files)
+test\ttests a solution against the given cases
+clear\tclears the terminal
+quit\texits the batch tester
+help\tprints this help message"""
 
 with open("config.json") as config_file:
 	config = json.load(config_file)
@@ -90,7 +91,7 @@ def grade_problem(problem, lang, contest_dir, args):
 							prog_in.write("".join(inp))
 					run = Popen(lang["run"]%(problem), stderr=PIPE, stdin=PIPE, stdout=PIPE, cwd=os.path.join(contest_dir, config["directories"]["bin"]), universal_newlines=True, shell=True)
 					
-					time_limit = args.timelimit or descriptor["limits"]["time"]
+					time_limit = args.time_limit or descriptor["limits"]["time"]
 
 					try:
 						if descriptor["io"]["input"] == "stdin":
@@ -331,21 +332,42 @@ def show_whitespace(string, ok):
 			characters_in_line += 1
 	return ret
 
-def cmd_quit(args):
+def cmd_quit(args, contest_dir):
 	exit(0)
 
-def cmd_clear(args):
+def cmd_clear(args, contest_dir):
 	os.system("cls" if os.name == "nt" else "clear")
 
-def cmd_add(args):
+def cmd_add(args, contest_dir):
 	argument_parser = argparse.ArgumentParser()
 
-	argument_parser.add_argument("-u", "--url", type=str)
+	argument_parser.add_argument("problem", help="the name of the problem for which to add a solution file", type=str)
+	argument_parser.add_argument("language", help="the language of the solution file to add", type=str)
 
-	if not add_file(argument_parser.parse_args(args), contest_dir):
+	argument_parser.add_argument("-v", "--verbose", help="show more output", action="count")
+	argument_parser.add_argument("-u", "--url", help="Codeforces URL from which to pull test cases", type=str)
+
+	args = argument_parser.parse_args(args)
+
+	args.verbose = args.verbose or 0
+
+	if not add_file(args, contest_dir):
 		print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
 
-def cmd_test(args):
+def cmd_test(args, contest_dir):
+	argument_parser = argparse.ArgumentParser()
+
+	argument_parser.add_argument("problem", help="the name of the problem to test", type=str)
+	argument_parser.add_argument("language", help="the language of the solution to test", type=str)
+
+	argument_parser.add_argument("-v", "--verbose", help="show more output", action="count")
+	argument_parser.add_argument("-s", "--stop-on-failure", help="stop if the solution fails a case", action="store_true")
+	argument_parser.add_argument("-t", "--time-limit", help="override the problem's default time limit", type=int)
+
+	args = argument_parser.parse_args(args)
+
+	args.verbose = args.verbose or 0
+
 	if not grade_problem(args.problem, args.language, contest_dir, args):
 		print("Unknown or unsupported language.  Add it to your config file if you would like to support it.\n")
 
@@ -391,16 +413,19 @@ def main():
 			print()
 			
 			try:
-				command_input = input("> ").split(re.compile(r"\s", "g"))
-				args = argument_parser.parse_args([command_input[0]])
+				command_input = input("> ").split()
+
+				if len(command_input) == 0 or command_input[0] == "help":
+					argument_parser.print_help()
+				else:
+					args = argument_parser.parse_args([command_input[0]])
+
+					if args.command in commands:
+						commands[args.command](command_input[1:], contest_dir)
+					else:
+						argument_parser.print_help()
 			except SystemExit:
 				continue
-
-			if args.command in commands:
-				commands[args.command](command_input[1:])
-			else:
-				argument_parser.print_help()
-
 		except KeyboardInterrupt:
 			print(colored.red("Operation stopped by keyboard interrupt.  Use the \"quit\" command or Ctrl+D to exit.", bold=True))
 		except EOFError:
